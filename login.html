@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResuCoach AI - Student Login Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="js/resumeEngine.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        html { scroll-behavior: smooth; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #F5F0E6;
+            color: #2d3748; 
+            cursor: none; 
+        }
+        .glass-card { 
+            background-color: #ffffff;
+            border: 2px solid #D2B48C; 
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 30px 60px -12px rgba(109, 140, 166, 0.3);
+            border-color: #6D8CA6;
+        }
+        .glow-aesthetic { box-shadow: 0 20px 40px -15px rgba(109, 140, 166, 0.35); }
+        
+        #customCursor {
+            position: fixed; top: 0; left: 0; width: 14px; height: 14px;
+            background-color: #6D8CA6; border-radius: 50%; pointer-events: none;
+            z-index: 9999; transform: translate(-50%, -50%); transition: transform 0.1s ease;
+        }
+        #cursorFollower {
+            position: fixed; top: 0; left: 0; width: 44px; height: 44px;
+            border: 2px solid #D9A7A7; border-radius: 50%; pointer-events: none;
+            z-index: 9998; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, border-color 0.3s;
+        }
+        .tilt-card { transform-style: preserve-3d; perspective: 1000px; }
+        
+        .animated-btn {
+            position: relative; overflow: hidden; transition: all 0.3s ease;
+        }
+        .animated-btn::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(60deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(30deg) translateY(-100%); transition: transform 0.6s ease;
+        }
+        .animated-btn:hover::after {
+            transform: rotate(30deg) translateY(100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between relative overflow-x-hidden p-4 sm:p-6">
+
+    <!-- Interactive Physics Canvas Dot Matrix -->
+    <canvas id="dotCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Kinetic Custom Cursor -->
+    <div id="customCursor"></div>
+    <div id="cursorFollower"></div>
+
+    <!-- Animated Ambient Soft Background Orbs -->
+    <div id="orb1" class="absolute top-0 left-1/4 w-[30rem] h-[30rem] bg-[#A7B89C]/30 rounded-full blur-[100px] pointer-events-none z-0"></div>
+    <div id="orb2" class="absolute bottom-0 right-1/4 w-[30rem] h-[30rem] bg-[#D9A7A7]/30 rounded-full blur-[100px] pointer-events-none z-0"></div>
+
+    <!-- Header Logo -->
+    <header class="max-w-5xl mx-auto w-full flex justify-between items-center py-4 z-10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-[#6D8CA6] flex items-center justify-center text-white text-xl font-black shadow-md shadow-[#6D8CA6]/30">
+                <i class="fa-solid fa-file-signature"></i>
+            </div>
+            <h1 class="text-xl font-extrabold tracking-tight text-[#2d3748]">
+                ResuCoach <span class="text-[#6D8CA6]">AI</span>
+            </h1>
+        </div>
+        <a href="report.html" class="interactive-hover text-xs font-bold text-[#6D8CA6] hover:text-[#2d3748] transition-all flex items-center gap-1.5">
+            <i class="fa-solid fa-graduation-cap"></i> Project Docs
+        </a>
+    </header>
+
+    <!-- Main Opening Login Card -->
+    <main class="max-w-md w-full mx-auto z-10 py-6">
+
+        <div id="loginCard" class="tilt-card glass-card p-8 rounded-[2.5rem] shadow-2xl space-y-6 glow-aesthetic">
+            
+            <!-- Opening App Header -->
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 bg-[#6D8CA6] rounded-3xl flex items-center justify-center mx-auto text-3xl text-white shadow-lg shadow-[#6D8CA6]/25">
+                    <i class="fa-solid fa-user-astronaut"></i>
+                </div>
+                <h2 class="text-2xl font-black text-[#2d3748] tracking-tight">Student Portal Login</h2>
+                <p class="text-xs text-slate-600 font-semibold">Opening Portal for AI Resume & Interview Coach</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="space-y-4 text-xs font-semibold">
+                <div>
+                    <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1.5 ml-1">College Email</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-envelope absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="email" id="loginEmail" value="khushi@college.edu" required placeholder="student@college.edu" 
+                               class="interactive-hover w-full pl-11 pr-4 py-3 rounded-2xl bg-[#F5F0E6]/50 border-2 border-[#D2B48C] focus:outline-none focus:border-[#6D8CA6] text-slate-900 font-bold transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1.5 ml-1">Password</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-lock absolute left-4 top-3.5 text-slate-400"></i>
+                        <input type="password" id="loginPassword" value="password123" required placeholder="••••••••" 
+                               class="interactive-hover w-full pl-11 pr-4 py-3 rounded-2xl bg-[#F5F0E6]/50 border-2 border-[#D2B48C] focus:outline-none focus:border-[#6D8CA6] text-slate-900 font-bold transition-all">
+                    </div>
+                </div>
+
+                <button type="submit" class="interactive-hover animated-btn w-full bg-[#6D8CA6] hover:bg-[#5a7791] text-white font-extrabold py-3.5 rounded-2xl shadow-lg shadow-[#6D8CA6]/25 transition-all text-xs tracking-wide mt-2">
+                    Login to Career Portal
+                </button>
+            </form>
+
+            <div class="relative my-4 text-center">
+                <hr class="border-[#D2B48C]">
+                <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#F5F0E6] px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider">OR</span>
+            </div>
+
+            <!-- 1-Click Demo Login for Evaluator Presentation -->
+            <button id="demoLoginBtn" class="interactive-hover animated-btn w-full bg-[#A7B89C] hover:bg-[#8f9f84] text-white font-bold py-3.5 rounded-2xl border-2 border-[#A7B89C] text-xs transition-all flex items-center justify-center gap-2 shadow-sm">
+                <i class="fa-solid fa-bolt text-amber-300"></i> 1-Click Demo Login (Evaluator Access)
+            </button>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-5xl mx-auto w-full text-center text-xs text-slate-600 font-bold py-4 z-10">
+        ResuCoach AI &bull; Final Year College Project &bull; Khushi Mandal
+    </footer>
+
+    <script>
+        // Interactive Physics Canvas Dot Matrix (Translucent Dots: rgba(236, 72, 153, 0.20))
+        const canvas = document.getElementById('dotCanvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                initDots();
+            });
+
+            const spacing = 40;
+            let dots = [];
+            let mouse = { x: -1000, y: -1000, radius: 140 };
+
+            document.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+
+            function initDots() {
+                dots = [];
+                for (let x = 20; x < width; x += spacing) {
+                    for (let y = 20; y < height; y += spacing) {
+                        dots.push({ baseX: x, baseY: y, x: x, y: y, vx: 0, vy: 0 });
+                    }
+                }
+            }
+            initDots();
+
+            function animateDots() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = 'rgba(236, 72, 153, 0.20)';
+
+                for (let i = 0; i < dots.length; i++) {
+                    const dot = dots[i];
+                    const dx = mouse.x - dot.x;
+                    const dy = mouse.y - dot.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < mouse.radius) {
+                        const angle = Math.atan2(dy, dx);
+                        const force = (mouse.radius - dist) / mouse.radius;
+                        const pushX = Math.cos(angle) * force * 28;
+                        const pushY = Math.sin(angle) * force * 28;
+
+                        dot.vx -= pushX * 0.25;
+                        dot.vy -= pushY * 0.25;
+                    }
+
+                    dot.vx += (dot.baseX - dot.x) * 0.08;
+                    dot.vy += (dot.baseY - dot.y) * 0.08;
+                    dot.vx *= 0.82;
+                    dot.vy *= 0.82;
+
+                    dot.x += dot.vx;
+                    dot.y += dot.vy;
+
+                    ctx.beginPath();
+                    ctx.arc(dot.x, dot.y, 2.0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                requestAnimationFrame(animateDots);
+            }
+            animateDots();
+        }
+
+        // Custom Kinetic Cursor
+        const customCursor = document.getElementById('customCursor');
+        const cursorFollower = document.getElementById('cursorFollower');
+        let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2, followerX = mouseX, followerY = mouseY;
+        document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; gsap.to(customCursor, { x: mouseX, y: mouseY, duration: 0.1 }); });
+        function animateFollower() { followerX += (mouseX - followerX) * 0.15; followerY += (mouseY - followerY) * 0.15; gsap.set(cursorFollower, { x: followerX, y: followerY }); requestAnimationFrame(animateFollower); }
+        animateFollower();
+
+        document.querySelectorAll('.interactive-hover').forEach(el => {
+            el.addEventListener('mouseenter', () => gsap.to(cursorFollower, { width: 64, height: 64, borderColor: '#D9A7A7', duration: 0.3 }));
+            el.addEventListener('mouseleave', () => gsap.to(cursorFollower, { width: 44, height: 44, borderColor: '#D9A7A7', duration: 0.3 }));
+        });
+
+        // Entrance GSAP Animation
+        window.addEventListener('DOMContentLoaded', () => {
+            gsap.from('#loginCard', { y: 50, opacity: 0, scale: 0.95, duration: 1, ease: 'back.out(1.7)' });
+            gsap.to('#orb1', { y: 30, x: -20, duration: 6, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+            gsap.to('#orb2', { y: -40, x: 25, duration: 7, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+        });
+
+        // 3D Card Tilt
+        const card = document.getElementById('loginCard');
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left - (rect.width / 2);
+            const y = e.clientY - rect.top - (rect.height / 2);
+            gsap.to(card, { rotationY: x * 0.04, rotationX: -y * 0.04, duration: 0.4, ease: 'power2.out' });
+        });
+        card.addEventListener('mouseleave', () => {
+            gsap.to(card, { rotationY: 0, rotationX: 0, duration: 0.6, ease: 'power2.out' });
+        });
+
+        // Login Handler
+        function doLogin(email) {
+            const name = email.split('@')[0];
+            const formattedName = name.charAt(0).toUpperCase() + name.slice(1);
+            localStorage.setItem('resucoach_user', JSON.stringify({
+                email: email,
+                name: formattedName === 'Khushi' ? 'Khushi Mandal' : formattedName
+            }));
+
+            // GSAP Exit transition
+            gsap.to('#loginCard', { y: -30, opacity: 0, scale: 0.95, duration: 0.5, onComplete: () => {
+                window.location.href = 'index.html';
+            }});
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            doLogin(email);
+        });
+
+        document.getElementById('demoLoginBtn').addEventListener('click', () => {
+            doLogin('khushi@college.edu');
+        });
+    </script>
+</body>
+</html>
