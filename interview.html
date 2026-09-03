@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResuCoach AI - AI Mock Interview Coach</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="js/resumeEngine.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        html { scroll-behavior: smooth; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #F5F0E6;
+            color: #2d3748; 
+            cursor: none; 
+        }
+        .glass-card { 
+            background-color: #ffffff;
+            border: 2px solid #D2B48C; 
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 30px 60px -12px rgba(109, 140, 166, 0.3);
+            border-color: #6D8CA6;
+        }
+        
+        .colorful-header {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(245, 240, 230, 0.95));
+            backdrop-filter: blur(20px);
+            border-bottom: 4px solid;
+            border-image: linear-gradient(to right, #6D8CA6, #A7B89C, #D9A7A7, #D2B48C, #6D8CA6) 1;
+        }
+
+        #customCursor {
+            position: fixed; top: 0; left: 0; width: 14px; height: 14px;
+            background-color: #6D8CA6; border-radius: 50%; pointer-events: none;
+            z-index: 9999; transform: translate(-50%, -50%); transition: transform 0.1s ease;
+        }
+        #cursorFollower {
+            position: fixed; top: 0; left: 0; width: 44px; height: 44px;
+            border: 2px solid #D9A7A7; border-radius: 50%; pointer-events: none;
+            z-index: 9998; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, border-color 0.3s;
+        }
+        .recording-pulse { animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.08); } }
+
+        .animated-btn {
+            position: relative; overflow: hidden; transition: all 0.3s ease;
+        }
+        .animated-btn::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(60deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(30deg) translateY(-100%); transition: transform 0.6s ease;
+        }
+        .animated-btn:hover::after {
+            transform: rotate(30deg) translateY(100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-24 relative overflow-x-hidden">
+
+    <!-- Interactive Physics Canvas Dot Matrix -->
+    <canvas id="dotCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Kinetic Custom Cursor -->
+    <div id="customCursor"></div>
+    <div id="cursorFollower"></div>
+
+    <!-- Animated Ambient Background Orbs -->
+    <div class="absolute top-0 left-1/4 w-[30rem] h-[30rem] bg-[#A7B89C]/35 rounded-full blur-[100px] pointer-events-none z-0"></div>
+    <div class="absolute top-1/3 right-1/4 w-[30rem] h-[30rem] bg-[#D9A7A7]/35 rounded-full blur-[100px] pointer-events-none z-0"></div>
+
+    <!-- Colorful Header Navigation -->
+    <header class="colorful-header sticky top-0 z-40 px-6 py-3.5 shadow-md">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <a href="analysis.html" class="interactive-hover bg-[#D9A7A7] hover:bg-[#c49292] text-white px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 shadow-sm">
+                <i class="fa-solid fa-xmark"></i> Exit Interview Practice
+            </a>
+            <div class="bg-gradient-to-r from-[#6D8CA6] to-[#A7B89C] px-4 py-1.5 rounded-full text-xs font-mono font-black text-white shadow-sm">
+                <i class="fa-solid fa-headset mr-1"></i> AI Mock Interview Simulator
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto px-6 pt-10 space-y-6 relative z-10">
+
+        <!-- Question Active Card -->
+        <div id="interviewPlayScreen" class="space-y-6">
+
+            <!-- Header Progress -->
+            <div class="reveal-elem flex justify-between items-center text-xs font-bold text-slate-600">
+                <span id="questionCategoryText" class="bg-[#A7B89C] text-white px-3.5 py-1 rounded-full shadow-sm font-extrabold">Technical Question</span>
+                <span id="questionCountText" class="font-extrabold text-[#2d3748]">Question 1 of 3</span>
+            </div>
+
+            <!-- Question Box -->
+            <div class="reveal-elem glass-card rounded-3xl p-6 sm:p-8 space-y-4 border-2 border-[#D2B48C] shadow-sm">
+                <h3 id="questionTitle" class="text-lg sm:text-xl font-extrabold text-[#2d3748] leading-relaxed">
+                    How do you optimize state management and re-rendering performance in a Full Stack Developer application?
+                </h3>
+                <p id="questionHint" class="text-xs text-[#6D8CA6] font-extrabold">💡 Hint: Mention React.memo, useMemo, useCallback, or Redux selector optimization.</p>
+            </div>
+
+            <!-- Answer Input Controls: Voice Microphone / Text -->
+            <div class="reveal-elem glass-card rounded-3xl p-6 space-y-4 border-2 border-[#D2B48C] shadow-sm">
+                <div class="flex justify-between items-center">
+                    <label class="text-xs font-bold text-[#2d3748] uppercase tracking-wider">Your Spoken or Typed Answer</label>
+                    <button id="toggleMicBtn" class="interactive-hover animated-btn bg-[#6D8CA6] hover:bg-[#5a7791] text-white px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-md shadow-[#6D8CA6]/30">
+                        <i class="fa-solid fa-microphone"></i> <span id="micBtnText">Record Answer</span>
+                    </button>
+                </div>
+
+                <textarea id="answerTextarea" rows="5" placeholder="Speak into microphone or type your response here..." 
+                          class="interactive-hover w-full bg-[#F5F0E6]/40 border-2 border-[#D2B48C] rounded-2xl p-4 text-sm text-[#2d3748] focus:outline-none focus:border-[#6D8CA6] transition-all font-semibold placeholder:text-slate-400 shadow-sm"></textarea>
+
+                <button id="submitAnswerBtn" class="interactive-hover animated-btn w-full bg-[#6D8CA6] hover:bg-[#5a7791] text-white font-black py-3.5 rounded-xl text-xs tracking-wide transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#6D8CA6]/30">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Evaluate My Answer with AI
+                </button>
+            </div>
+
+            <!-- AI Feedback Report Card -->
+            <div id="feedbackCard" class="hidden glass-card rounded-3xl p-6 border-2 border-[#D2B48C] space-y-4 bg-white/95 shadow-xl">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-[#6D8CA6] flex items-center gap-1.5">
+                        <i class="fa-solid fa-square-poll-vertical"></i> AI Answer Assessment
+                    </span>
+                    <span id="answerScoreBadge" class="bg-[#A7B89C] text-white text-sm font-black px-3 py-1 rounded-xl shadow-sm">
+                        85 / 100
+                    </span>
+                </div>
+
+                <div class="space-y-2 text-xs font-medium text-[#2d3748]">
+                    <div class="bg-[#A7B89C]/25 p-3 rounded-xl border border-[#A7B89C]">
+                        <strong class="text-[#3c5737] font-extrabold block mb-1">👍 Key Strengths:</strong>
+                        <ul id="strengthsList" class="space-y-1 text-slate-700 font-semibold">
+                            <!-- Dynamically loaded -->
+                        </ul>
+                    </div>
+                    <div class="bg-[#D9A7A7]/25 p-3 rounded-xl border border-[#D9A7A7]">
+                        <strong class="text-[#854040] font-extrabold block mb-1">💡 Suggested Improvements:</strong>
+                        <ul id="improvementsList" class="space-y-1 text-slate-700 font-semibold">
+                            <!-- Dynamically loaded -->
+                        </ul>
+                    </div>
+                    <div class="bg-[#6D8CA6]/20 p-3 rounded-xl border border-[#6D8CA6]">
+                        <strong class="text-[#6D8CA6] font-extrabold block mb-1">⭐ Senior Engineer Model Answer:</strong>
+                        <p id="modelAnswerText" class="text-slate-700 leading-relaxed font-semibold">
+                            To optimize state management, I isolate local component state from global state...
+                        </p>
+                    </div>
+                </div>
+
+                <button id="nextQuestionBtn" class="interactive-hover animated-btn w-full bg-[#2d3748] hover:bg-[#1a202c] text-white font-extrabold py-3.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2">
+                    Next Mock Question <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        // Interactive Physics Canvas Dot Matrix (Translucent Dots: rgba(236, 72, 153, 0.20))
+        const canvas = document.getElementById('dotCanvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                initDots();
+            });
+
+            const spacing = 40;
+            let dots = [];
+            let mouse = { x: -1000, y: -1000, radius: 140 };
+
+            document.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+
+            function initDots() {
+                dots = [];
+                for (let x = 20; x < width; x += spacing) {
+                    for (let y = 20; y < height; y += spacing) {
+                        dots.push({ baseX: x, baseY: y, x: x, y: y, vx: 0, vy: 0 });
+                    }
+                }
+            }
+            initDots();
+
+            function animateDots() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = 'rgba(236, 72, 153, 0.20)';
+
+                for (let i = 0; i < dots.length; i++) {
+                    const dot = dots[i];
+                    const dx = mouse.x - dot.x;
+                    const dy = mouse.y - dot.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < mouse.radius) {
+                        const angle = Math.atan2(dy, dx);
+                        const force = (mouse.radius - dist) / mouse.radius;
+                        const pushX = Math.cos(angle) * force * 28;
+                        const pushY = Math.sin(angle) * force * 28;
+
+                        dot.vx -= pushX * 0.25;
+                        dot.vy -= pushY * 0.25;
+                    }
+
+                    dot.vx += (dot.baseX - dot.x) * 0.08;
+                    dot.vy += (dot.baseY - dot.y) * 0.08;
+                    dot.vx *= 0.82;
+                    dot.vy *= 0.82;
+
+                    dot.x += dot.vx;
+                    dot.y += dot.vy;
+
+                    ctx.beginPath();
+                    ctx.arc(dot.x, dot.y, 2.0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                requestAnimationFrame(animateDots);
+            }
+            animateDots();
+        }
+
+        // Custom Kinetic Cursor
+        const customCursor = document.getElementById('customCursor');
+        const cursorFollower = document.getElementById('cursorFollower');
+
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let followerX = mouseX;
+        let followerY = mouseY;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            gsap.to(customCursor, { x: mouseX, y: mouseY, duration: 0.1 });
+        });
+
+        function animateFollower() {
+            followerX += (mouseX - followerX) * 0.15;
+            followerY += (mouseY - followerY) * 0.15;
+            gsap.set(cursorFollower, { x: followerX, y: followerY });
+            requestAnimationFrame(animateFollower);
+        }
+        animateFollower();
+
+        document.querySelectorAll('.interactive-hover').forEach(el => {
+            el.addEventListener('mouseenter', () => gsap.to(cursorFollower, { width: 64, height: 64, borderColor: '#D9A7A7', duration: 0.3 }));
+            el.addEventListener('mouseleave', () => gsap.to(cursorFollower, { width: 44, height: 44, borderColor: '#D9A7A7', duration: 0.3 }));
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            gsap.from('.reveal-elem', { y: 40, opacity: 0, stagger: 0.15, duration: 1, ease: 'back.out(1.5)' });
+        });
+
+        const rawAnalysis = sessionStorage.getItem('active_resume_analysis');
+        const defaultAnalysis = ResuCoachEngine.analyzeResume(PRESET_RESUMES.cs_student.text, 'fullstack');
+        const analysis = rawAnalysis ? JSON.parse(rawAnalysis) : defaultAnalysis;
+
+        const questions = analysis.mockInterviewQuestions || [];
+        let currentIndex = 0;
+
+        // DOM Elements
+        const questionCategoryText = document.getElementById('questionCategoryText');
+        const questionCountText = document.getElementById('questionCountText');
+        const questionTitle = document.getElementById('questionTitle');
+        const questionHint = document.getElementById('questionHint');
+        const answerTextarea = document.getElementById('answerTextarea');
+        const submitAnswerBtn = document.getElementById('submitAnswerBtn');
+        const feedbackCard = document.getElementById('feedbackCard');
+        const answerScoreBadge = document.getElementById('answerScoreBadge');
+        const strengthsList = document.getElementById('strengthsList');
+        const improvementsList = document.getElementById('improvementsList');
+        const modelAnswerText = document.getElementById('modelAnswerText');
+        const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+
+        function loadQuestion() {
+            feedbackCard.classList.add('hidden');
+            answerTextarea.value = '';
+
+            const q = questions[currentIndex];
+            questionCategoryText.textContent = `${q.type} Question`;
+            questionCountText.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
+            questionTitle.textContent = q.question;
+            questionHint.textContent = `💡 Hint: ${(q.hints || []).join(' ')}`;
+        }
+
+        // Live Voice Input Recognition
+        const toggleMicBtn = document.getElementById('toggleMicBtn');
+        const micBtnText = document.getElementById('micBtnText');
+        let isRecording = false;
+        let recognition = null;
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    transcript += event.results[i][0].transcript;
+                }
+                answerTextarea.value = transcript;
+            };
+        }
+
+        toggleMicBtn.addEventListener('click', () => {
+            if (!recognition) {
+                alert('Speech recognition is not supported in this browser. Type your answer!');
+                return;
+            }
+
+            if (!isRecording) {
+                isRecording = true;
+                recognition.start();
+                micBtnText.textContent = 'Recording Voice...';
+                toggleMicBtn.className = 'interactive-hover bg-red-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 recording-pulse shadow-md';
+            } else {
+                isRecording = false;
+                recognition.stop();
+                micBtnText.textContent = 'Record Answer';
+                toggleMicBtn.className = 'interactive-hover bg-[#6D8CA6] hover:bg-[#5a7791] text-white px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-md shadow-[#6D8CA6]/30';
+            }
+        });
+
+        // Submit Evaluation
+        submitAnswerBtn.addEventListener('click', () => {
+            const userAns = answerTextarea.value.trim();
+            if (!userAns) {
+                alert('Please speak or type an answer before evaluating!');
+                return;
+            }
+
+            const currentQ = questions[currentIndex];
+            const evalResult = ResuCoachEngine.evaluateInterviewAnswer(currentQ, userAns);
+
+            answerScoreBadge.textContent = `${evalResult.score} / 100`;
+            strengthsList.innerHTML = evalResult.strengths.map(s => `<li>&bull; ${s}</li>`).join('');
+            improvementsList.innerHTML = evalResult.improvements.map(i => `<li>&bull; ${i}</li>`).join('');
+            modelAnswerText.textContent = evalResult.idealAnswer;
+
+            feedbackCard.classList.remove('hidden');
+            gsap.from('#feedbackCard', { opacity: 0, y: 30, duration: 0.6, ease: 'power2.out' });
+        });
+
+        nextQuestionBtn.addEventListener('click', () => {
+            if (currentIndex < questions.length - 1) {
+                currentIndex++;
+                loadQuestion();
+            } else {
+                alert('Mock Interview Practice Complete! Check your Dashboard for updated career scores.');
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        loadQuestion();
+    </script>
+</body>
+</html>
