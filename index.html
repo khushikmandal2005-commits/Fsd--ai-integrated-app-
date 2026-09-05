@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        if (!localStorage.getItem('resucoach_user')) {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResuCoach AI - AI Resume & Interview Coach</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="js/resumeEngine.js"></script>
+    <link href="https://cdnjs.cloudflare.com/a/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        html { scroll-behavior: smooth; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #F5F0E6;
+            color: #2d3748; 
+            cursor: none; 
+        }
+        .glass-card { 
+            background-color: #ffffff;
+            border: 2px solid #D2B48C; 
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 30px 60px -12px rgba(109, 140, 166, 0.3);
+            border-color: #6D8CA6;
+        }
+        .glow-multi { box-shadow: 0 20px 40px -15px rgba(109, 140, 166, 0.3); }
+
+        .colorful-header {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(245, 240, 230, 0.95));
+            backdrop-filter: blur(20px);
+            border-bottom: 4px solid;
+            border-image: linear-gradient(to right, #6D8CA6, #A7B89C, #D9A7A7, #D2B48C, #6D8CA6) 1;
+        }
+        
+        #customCursor {
+            position: fixed; top: 0; left: 0; width: 14px; height: 14px;
+            background-color: #6D8CA6; border-radius: 50%; pointer-events: none;
+            z-index: 9999; transform: translate(-50%, -50%); transition: transform 0.1s ease;
+        }
+        #cursorFollower {
+            position: fixed; top: 0; left: 0; width: 44px; height: 44px;
+            border: 2px solid #D9A7A7; border-radius: 50%; pointer-events: none;
+            z-index: 9998; transform: translate(-50%, -50%); transition: width 0.3s, height 0.3s, border-color 0.3s;
+        }
+
+        .tilt-card { transform-style: preserve-3d; perspective: 1000px; }
+
+        .animated-btn {
+            position: relative; overflow: hidden; transition: all 0.3s ease;
+        }
+        .animated-btn::after {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(60deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(30deg) translateY(-100%); transition: transform 0.6s ease;
+        }
+        .animated-btn:hover::after {
+            transform: rotate(30deg) translateY(100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-24 relative overflow-x-hidden">
+
+    <!-- Interactive Physics Canvas Dot Matrix -->
+    <canvas id="dotCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Kinetic Custom Cursor -->
+    <div id="customCursor"></div>
+    <div id="cursorFollower"></div>
+
+    <!-- Animated Ambient Soft Orbs -->
+    <div id="orb1" class="absolute top-0 left-1/4 w-[30rem] h-[30rem] bg-[#A7B89C]/35 rounded-full blur-[100px] pointer-events-none z-0"></div>
+    <div id="orb2" class="absolute top-1/3 right-1/4 w-[30rem] h-[30rem] bg-[#D9A7A7]/35 rounded-full blur-[100px] pointer-events-none z-0"></div>
+
+    <!-- Colorful Header Navigation -->
+    <header class="colorful-header sticky top-0 z-40 px-6 py-3.5 shadow-md">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            
+            <!-- Logo Section -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#6D8CA6] to-[#A7B89C] flex items-center justify-center text-white text-xl font-black shadow-md">
+                    <i class="fa-solid fa-file-signature"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-tight text-[#2d3748] flex items-center gap-2">
+                        ResuCoach <span class="bg-[#D9A7A7] text-white text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">AI Coach</span>
+                    </h1>
+                    <p class="text-[11px] text-[#6D8CA6] font-extrabold">Career Readiness & Mock Interview Platform</p>
+                </div>
+            </div>
+
+            <!-- Colorful Navigation Links -->
+            <div class="hidden md:flex items-center gap-2 text-xs font-extrabold">
+                <a href="jobmatcher.html" class="interactive-hover bg-[#A7B89C]/20 hover:bg-[#A7B89C] text-[#2d3748] hover:text-white px-3.5 py-1.5 rounded-xl border border-[#A7B89C] transition-all">🎯 Job Matcher</a>
+                <a href="builder.html" class="interactive-hover bg-[#D9A7A7]/20 hover:bg-[#D9A7A7] text-[#2d3748] hover:text-white px-3.5 py-1.5 rounded-xl border border-[#D9A7A7] transition-all">📝 Resume Builder</a>
+                <a href="questions.html" class="interactive-hover bg-[#D2B48C]/20 hover:bg-[#D2B48C] text-[#2d3748] hover:text-white px-3.5 py-1.5 rounded-xl border border-[#D2B48C] transition-all">📚 Question Bank</a>
+                <a href="salaries.html" class="interactive-hover bg-[#6D8CA6]/20 hover:bg-[#6D8CA6] text-[#2d3748] hover:text-white px-3.5 py-1.5 rounded-xl border border-[#6D8CA6] transition-all">💰 Salary Estimator</a>
+                <a href="dashboard.html" class="interactive-hover bg-[#D9A7A7]/20 hover:bg-[#D9A7A7] text-[#2d3748] hover:text-white px-3.5 py-1.5 rounded-xl border border-[#D9A7A7] transition-all">📈 Analytics</a>
+            </div>
+
+            <!-- User Avatar & Logout Button -->
+            <div class="flex items-center gap-3">
+                <span id="userNameDisplay" class="text-xs font-black text-white bg-gradient-to-r from-[#6D8CA6] to-[#A7B89C] px-4 py-1.5 rounded-full shadow-sm">Student</span>
+                <button id="logoutBtn" title="Logout" class="interactive-hover bg-[#D9A7A7] hover:bg-red-600 text-white p-2 rounded-xl text-xs transition-all shadow-sm">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 pt-10 space-y-8 relative z-10">
+
+        <!-- Hero Section -->
+        <div class="hero-section text-center space-y-4">
+            <div class="inline-flex items-center gap-2 bg-white border-2 border-[#D2B48C] px-4 py-1.5 rounded-full text-xs font-extrabold text-[#2d3748] mb-2 shadow-sm">
+                <i class="fa-solid fa-sparkles text-[#6D8CA6]"></i> Interactive Physics Grid Matrix
+            </div>
+            <h2 class="hero-title text-4xl sm:text-5xl font-black text-[#2d3748] tracking-tight leading-tight">
+                Optimize Your Resume & Ace Your <br>
+                <span class="text-[#6D8CA6] underline decoration-[#D9A7A7] decoration-4">AI Mock Interview</span>
+            </h2>
+            <p class="hero-subtitle text-sm text-slate-700 max-w-xl mx-auto font-semibold leading-relaxed">
+                Upload your resume, select target role, get instant ATS scoring, missing skill analysis, power bullet rewrites, and practice AI voice mock interviews.
+            </p>
+        </div>
+
+        <!-- Clean Multi-Card Navigation Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-xs font-extrabold">
+            
+            <a href="jobmatcher.html" class="interactive-hover glass-card bg-[#A7B89C] text-white p-4 rounded-2xl border-2 border-[#A7B89C] hover:opacity-90 transition-all space-y-1 shadow-md flex flex-col items-center justify-center group">
+                <div class="text-2xl mb-1 group-hover:scale-125 transition-transform"><i class="fa-solid fa-bullseye"></i></div>
+                <span class="block">Job Matcher</span>
+            </a>
+
+            <a href="builder.html" class="interactive-hover glass-card bg-[#D9A7A7] text-white p-4 rounded-2xl border-2 border-[#D9A7A7] hover:opacity-90 transition-all space-y-1 shadow-md flex flex-col items-center justify-center group">
+                <div class="text-2xl mb-1 group-hover:scale-125 transition-transform"><i class="fa-solid fa-print"></i></div>
+                <span class="block">ATS Builder</span>
+            </a>
+
+            <a href="questions.html" class="interactive-hover glass-card bg-[#D2B48C] text-white p-4 rounded-2xl border-2 border-[#D2B48C] hover:opacity-90 transition-all space-y-1 shadow-md flex flex-col items-center justify-center group">
+                <div class="text-2xl mb-1 group-hover:scale-125 transition-transform"><i class="fa-solid fa-book"></i></div>
+                <span class="block">Question Bank</span>
+            </a>
+
+            <a href="salaries.html" class="interactive-hover glass-card bg-[#6D8CA6] text-white p-4 rounded-2xl border-2 border-[#6D8CA6] hover:opacity-90 transition-all space-y-1 shadow-md flex flex-col items-center justify-center group">
+                <div class="text-2xl mb-1 group-hover:scale-125 transition-transform"><i class="fa-solid fa-sack-dollar"></i></div>
+                <span class="block">Salary CTC</span>
+            </a>
+        </div>
+
+        <!-- 3D Tilt Main Input Container -->
+        <div id="mainInputCard" class="tilt-card glass-card rounded-3xl p-6 sm:p-8 space-y-6 border-2 border-[#D2B48C] glow-multi">
+            
+            <!-- Target Job Role Selector -->
+            <div>
+                <label class="block text-xs font-bold text-[#2d3748] uppercase tracking-wider mb-2">Select Target Job Role</label>
+                <select id="targetRoleSelect" class="interactive-hover w-full bg-[#F5F0E6]/50 border-2 border-[#6D8CA6] rounded-2xl px-4 py-3.5 text-sm text-[#2d3748] font-extrabold focus:outline-none transition-all cursor-pointer shadow-sm">
+                    <option value="fullstack">💻 Full Stack Developer (Node.js / React)</option>
+                    <option value="frontend">🎨 Frontend Web Developer (React / Next.js)</option>
+                    <option value="backend">⚙️ Backend Engineer (Node.js / Python / SQL)</option>
+                    <option value="datascientist">📊 Data Scientist / Machine Learning Engineer</option>
+                </select>
+            </div>
+
+            <!-- Resume Upload Dropzone -->
+            <label for="resumeFileInput" id="dropzoneLabel" class="interactive-hover border-2 border-dashed border-[#6D8CA6] hover:border-[#D9A7A7] bg-[#6D8CA6]/10 hover:bg-[#D9A7A7]/20 rounded-2xl p-8 text-center block cursor-pointer transition-all relative overflow-hidden group">
+                <div class="w-16 h-16 bg-[#6D8CA6] rounded-2xl flex items-center justify-center mx-auto mb-3 text-white text-2xl border border-[#6D8CA6] group-hover:scale-110 transition-transform shadow-md">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                </div>
+                <h4 class="text-base font-bold text-[#2d3748] mb-1">Upload Resume (PDF, DOCX, or TXT)</h4>
+                <p class="text-xs text-slate-600 font-semibold">Click to browse file or drag & drop your resume</p>
+                <input type="file" id="resumeFileInput" accept=".pdf,.txt,.doc,.docx" class="hidden">
+            </label>
+
+            <!-- File Status Box -->
+            <div id="fileStatusBox" class="hidden bg-[#A7B89C] border-2 border-[#A7B89C] p-3.5 rounded-xl flex justify-between items-center text-xs font-extrabold text-white shadow-md">
+                <span id="fileNameDisplay"><i class="fa-solid fa-file-lines mr-2"></i> Resume.pdf loaded</span>
+                <span class="bg-[#6D8CA6] text-white px-2.5 py-1 rounded-md">Ready for ATS Scan</span>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="h-[2px] bg-[#D2B48C] flex-1"></div>
+                <span class="text-[#6D8CA6] text-xs font-black uppercase tracking-widest">OR PASTE RESUME TEXT</span>
+                <div class="h-[2px] bg-[#D2B48C] flex-1"></div>
+            </div>
+
+            <!-- Direct Resume Textarea -->
+            <div>
+                <textarea id="resumeTextarea" rows="6" placeholder="Paste your resume content, experience bullet points, and skills here..." 
+                          class="interactive-hover w-full bg-[#F5F0E6]/40 border-2 border-[#D2B48C] rounded-2xl p-4 text-sm text-[#2d3748] focus:outline-none focus:border-[#6D8CA6] transition-all placeholder:text-slate-400 font-semibold shadow-sm"></textarea>
+            </div>
+
+            <!-- Preset Sample Student Resumes -->
+            <div>
+                <span class="text-xs font-bold text-[#2d3748] uppercase tracking-wider block mb-2">Try Preset Sample Resumes:</span>
+                <div class="flex flex-wrap gap-2">
+                    <button class="preset-resume-btn interactive-hover animated-btn bg-[#A7B89C] hover:bg-[#8e9f83] text-white px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all shadow-sm" data-key="cs_student">
+                        👩‍💻 Sample CS Student Resume
+                    </button>
+                    <button class="preset-resume-btn interactive-hover animated-btn bg-[#D9A7A7] hover:bg-[#c49292] text-white px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all shadow-sm" data-key="web_dev">
+                        🌐 Sample Frontend Dev Resume
+                    </button>
+                </div>
+            </div>
+
+            <!-- GSAP Animated Action Button -->
+            <button id="analyzeBtn" class="interactive-hover animated-btn w-full bg-[#6D8CA6] hover:bg-[#5a7791] text-white font-black py-4 rounded-2xl shadow-xl shadow-[#6D8CA6]/30 transition-all text-sm tracking-wide flex items-center justify-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles text-lg"></i> Analyze Resume ATS Score & Prepare Coaching
+            </button>
+
+        </div>
+
+    </main>
+
+    <!-- AI Generation Fullscreen Overlay -->
+    <div id="aiLoadingOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-6 text-center">
+        <div class="relative w-20 h-20 mb-6">
+            <div class="absolute inset-0 rounded-full border-4 border-[#A7B89C]"></div>
+            <div class="absolute inset-0 rounded-full border-4 border-[#6D8CA6] border-t-transparent animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center text-[#6D8CA6] text-2xl">
+                <i class="fa-solid fa-microchip"></i>
+            </div>
+        </div>
+        <h3 class="text-2xl font-extrabold text-white tracking-tight">ResuCoach AI is Analyzing...</h3>
+        <p id="loadingStatusText" class="text-sm text-[#F5F0E6] font-medium mt-2">Checking ATS Keywords, Action Verbs & Skill Gaps...</p>
+        <p class="text-xs text-slate-300 mt-6">Generating Role-Specific AI Mock Interview Questions</p>
+    </div>
+
+    <script>
+        // Interactive Physics Canvas Dot Matrix (Translucent Dots: rgba(236, 72, 153, 0.20))
+        const canvas = document.getElementById('dotCanvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+                initDots();
+            });
+
+            const spacing = 40;
+            let dots = [];
+            let mouse = { x: -1000, y: -1000, radius: 140 };
+
+            document.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+
+            function initDots() {
+                dots = [];
+                for (let x = 20; x < width; x += spacing) {
+                    for (let y = 20; y < height; y += spacing) {
+                        dots.push({ baseX: x, baseY: y, x: x, y: y, vx: 0, vy: 0 });
+                    }
+                }
+            }
+            initDots();
+
+            function animateDots() {
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = 'rgba(236, 72, 153, 0.20)';
+
+                for (let i = 0; i < dots.length; i++) {
+                    const dot = dots[i];
+                    const dx = mouse.x - dot.x;
+                    const dy = mouse.y - dot.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < mouse.radius) {
+                        const angle = Math.atan2(dy, dx);
+                        const force = (mouse.radius - dist) / mouse.radius;
+                        const pushX = Math.cos(angle) * force * 28;
+                        const pushY = Math.sin(angle) * force * 28;
+
+                        dot.vx -= pushX * 0.25;
+                        dot.vy -= pushY * 0.25;
+                    }
+
+                    dot.vx += (dot.baseX - dot.x) * 0.08;
+                    dot.vy += (dot.baseY - dot.y) * 0.08;
+                    dot.vx *= 0.82;
+                    dot.vy *= 0.82;
+
+                    dot.x += dot.vx;
+                    dot.y += dot.vy;
+
+                    ctx.beginPath();
+                    ctx.arc(dot.x, dot.y, 2.0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                requestAnimationFrame(animateDots);
+            }
+            animateDots();
+        }
+
+        // Custom Kinetic Cursor
+        const customCursor = document.getElementById('customCursor');
+        const cursorFollower = document.getElementById('cursorFollower');
+
+        let mouseX = window.innerWidth / 2;
+        let mouseY = window.innerHeight / 2;
+        let followerX = mouseX;
+        let followerY = mouseY;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            gsap.to(customCursor, { x: mouseX, y: mouseY, duration: 0.1 });
+        });
+
+        function animateFollower() {
+            followerX += (mouseX - followerX) * 0.15;
+            followerY += (mouseY - followerY) * 0.15;
+            gsap.set(cursorFollower, { x: followerX, y: followerY });
+            requestAnimationFrame(animateFollower);
+        }
+        animateFollower();
+
+        document.querySelectorAll('.interactive-hover').forEach(el => {
+            el.addEventListener('mouseenter', () => gsap.to(cursorFollower, { width: 64, height: 64, borderColor: '#D9A7A7', duration: 0.3 }));
+            el.addEventListener('mouseleave', () => gsap.to(cursorFollower, { width: 44, height: 44, borderColor: '#D9A7A7', duration: 0.3 }));
+        });
+
+        // User Auth Header Display
+        const user = JSON.parse(localStorage.getItem('resucoach_user') || '{}');
+        if (user.name) {
+            document.getElementById('userNameDisplay').textContent = user.name;
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('resucoach_user');
+            window.location.href = 'login.html';
+        });
+
+        // GSAP Hero Animations with back.out spring
+        window.addEventListener('DOMContentLoaded', () => {
+            const tl = gsap.timeline({ defaults: { ease: 'back.out(1.5)', duration: 1 } });
+            tl.from('.hero-section > *', { y: 40, opacity: 0, stagger: 0.15 })
+              .from('#mainInputCard', { y: 50, opacity: 0, scale: 0.96 }, '-=0.6');
+
+            gsap.to('#orb1', { y: 30, x: -20, duration: 6, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+            gsap.to('#orb2', { y: -40, x: 25, duration: 7, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+        });
+
+        // 3D Card Tilt
+        const mainCard = document.getElementById('mainInputCard');
+        mainCard.addEventListener('mousemove', (e) => {
+            const rect = mainCard.getBoundingClientRect();
+            const x = e.clientX - rect.left - (rect.width / 2);
+            const y = e.clientY - rect.top - (rect.height / 2);
+            gsap.to(mainCard, { rotationY: x * 0.03, rotationX: -y * 0.03, duration: 0.4, ease: 'power2.out' });
+        });
+        mainCard.addEventListener('mouseleave', () => {
+            gsap.to(mainCard, { rotationY: 0, rotationX: 0, duration: 0.6, ease: 'power2.out' });
+        });
+
+        // File Reader
+        const resumeFileInput = document.getElementById('resumeFileInput');
+        const fileStatusBox = document.getElementById('fileStatusBox');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const resumeTextarea = document.getElementById('resumeTextarea');
+        const targetRoleSelect = document.getElementById('targetRoleSelect');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const aiLoadingOverlay = document.getElementById('aiLoadingOverlay');
+
+        resumeFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileNameDisplay.innerHTML = `<i class="fa-solid fa-file-lines mr-2"></i> ${file.name}`;
+                fileStatusBox.classList.remove('hidden');
+                gsap.from(fileStatusBox, { opacity: 0, y: -10, duration: 0.4 });
+
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    resumeTextarea.value = evt.target.result || PRESET_RESUMES.cs_student.text;
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Presets
+        document.querySelectorAll('.preset-resume-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-key');
+                const sample = PRESET_RESUMES[key];
+                if (sample) {
+                    resumeTextarea.value = sample.text;
+                    targetRoleSelect.value = sample.role;
+                    gsap.from(resumeTextarea, { scale: 0.99, duration: 0.3 });
+                }
+            });
+        });
+
+        // Analyze Action
+        analyzeBtn.addEventListener('click', () => {
+            const text = resumeTextarea.value.trim();
+            if (!text) {
+                alert('Please upload or paste your resume text first!');
+                return;
+            }
+
+            aiLoadingOverlay.classList.remove('hidden');
+            gsap.from('#aiLoadingOverlay', { opacity: 0, duration: 0.4 });
+
+            setTimeout(() => {
+                const roleKey = targetRoleSelect.value;
+                const analysisResult = ResuCoachEngine.analyzeResume(text, roleKey);
+                ResuCoachEngine.saveAnalysisToHistory(analysisResult);
+                sessionStorage.setItem('active_resume_analysis', JSON.stringify(analysisResult));
+                window.location.href = 'analysis.html';
+            }, 1200);
+        });
+    </script>
+</body>
+</html>
